@@ -1,102 +1,139 @@
 const { Octokit } = require("@octokit/rest");
-// Import the Google Generative AI library
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// This is the main function that Vercel will run
+// Helper function to create content on GitHub
+async function createFile(octokit, owner, repo, path, message, content) {
+    await octokit.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        path,
+        message,
+        content: Buffer.from(content).toString('base64'),
+    });
+}
+
+// Helper function to update content on GitHub
+async function updateFile(octokit, owner, repo, path, message, content, sha) {
+    const { data } = await octokit.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        path,
+        message,
+        content: Buffer.from(content).toString('base64'),
+        sha, // <-- This is required for updates
+    });
+    return data.commit.sha; // Return the new commit SHA
+}
+
+
 module.exports = async (req, res) => {
-    // 1. --- Check the request ---
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Only POST requests are allowed' });
     }
-
-    const requestData = req.body;
-    const { email, secret, task, round, nonce, brief, checks, evaluation_url } = requestData;
-
-    // 2. --- Verify the "secret" ---
-    // Use an environment variable for security
-    const MY_SECRET = process.env.MY_PROJECT_SECRET || "ds-llmproj-2025-X9a2Q"; 
-    if (secret !== MY_SECRET) {
-        return res.status(401).json({ message: 'Invalid secret' });
-    }
     
-    // Immediately send a success response so the instructor's server doesn't time out
+    // Immediately send a success response
     res.status(200).json({ message: 'Request received. Processing...' });
 
-    // 3. --- Use LLM to Generate the Website Code ---
     try {
-        // Initialize the Google AI client with your API key from environment variables
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-        // Construct a detailed prompt for the LLM
-        const prompt = `
-            You are an expert web developer. Your task is to generate the complete code for a single 'index.html' file.
-            
-            **Constraints:**
-            - You must generate a single, self-contained HTML file.
-            - All CSS and JavaScript must be embedded directly within the HTML file in <style> and <script> tags.
-            - Do NOT use any external files or libraries unless explicitly asked for in the brief (e.g., Bootstrap from a CDN).
-            - Your response must be ONLY the raw HTML code. Do not include any explanations, comments, or markdown formatting like \`\`\`html.
-
-            **Project Brief:**
-            ${brief}
-
-            **Evaluation Checks (your code must pass these):**
-            ${JSON.stringify(checks, null, 2)}
-
-            Now, generate the complete HTML code.
-        `;
-
-        // Call the Gemini API to generate the code
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const htmlContent = response.text();
+        const requestData = req.body;
+        const { email, secret, task, round, nonce, brief, checks, evaluation_url } = requestData;
         
-        // If the LLM fails to generate code, stop here to avoid errors
-        if (!htmlContent || !htmlContent.startsWith('<!DOCTYPE html>')) {
-             console.error("LLM failed to generate valid HTML.", htmlContent);
-             return; // Stop execution for this request
+        // --- Verify Secret ---
+        const MY_SECRET = process.env.MY_PROJECT_SECRET;
+        if (secret !== MY_SECRET) {
+            console.error("Invalid secret received.");
+            return;
         }
 
-        const GITHUB_USERNAME = process.env.GITHUB_USERNAME; 
+        const GITHUB_USERNAME = process.env.GITHUB_USERNAME;
         const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
         const octokit = new Octokit({ auth: GITHUB_TOKEN });
         const repoName = task;
 
-        // 4. --- Create GitHub Repo and Push the Generated Code ---
-        const repo = await octokit.repos.createForAuthenticatedUser({ name: repoName, private: false });
-        const repoUrl = repo.data.html_url;
+        // --- Initialize Gemini API ---
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-        const { data: { commit } } = await octokit.repos.createOrUpdateFileContents({
-            owner: GITHUB_USERNAME,
-            repo: repoName,
-            path: 'index.html',
-            message: `feat: Initial commit for task ${task}`,
-            content: Buffer.from(htmlContent).toString('base64'),
-        });
-        const commitSha = commit.sha;
+        // =================================================================
+        //  ROUND 1 LOGIC: CREATE NEW REPOSITORY
+        // =================================================================
+        if (round === 1) {
+            console.log(`Starting Round 1 for task: ${task}`);
+            
+            // 1. Generate Code with LLM
+            const createPrompt = `You are an expert web developer. Create a single, self-contained HTML file. All CSS and JavaScript must be embedded. Do not include any explanations, just the raw HTML code. Brief: ${brief}. Checks: ${JSON.stringify(checks)}`;
+            const result = await model.generateContent(createPrompt);
+            const htmlContent = result.response.text();
+            
+            // 2. Create Repository
+            const repo = await octokit.repos.createForAuthenticatedUser({ name: repoName, private: false });
+            const repoUrl = repo.data.html_url;
 
-        // 5. --- Enable GitHub Pages ---
-        await octokit.repos.createPagesSite({
-            owner: GITHUB_USERNAME,
-            repo: repoName,
-            source: { branch: 'main', path: '/' },
-        });
-        const pagesUrl = `https://${GITHUB_USERNAME}.github.io/${repoName}/`;
-        console.log(`Successfully created repo and enabled Pages at ${pagesUrl}`);
+            // 3. Create initial files (index.html, README, LICENSE)
+            const readmeContent = `# ${task}\n\n## Round 1\n\n**Brief:** ${brief}`;
+            const licenseContent = "MIT License\n\nCopyright (c) 2025 Your Name\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions...\n(The full MIT license text should be here)";
 
-        // 6. --- Notify the Evaluation URL ---
-        // Give GitHub Pages a few seconds to build and deploy the site
-        setTimeout(async () => {
-            await fetch(evaluation_url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, task, round, nonce, repo_url: repoUrl, commit_sha: commitSha, pages_url: pagesUrl }),
-            });
-            console.log("Successfully notified evaluation URL.");
-        }, 20000); // Wait 20 seconds
+            await createFile(octokit, GITHUB_USERNAME, repoName, 'index.html', 'feat: Initial commit with index.html', htmlContent);
+            await createFile(octokit, GITHUB_USERNAME, repoName, 'README.md', 'docs: Add README', readmeContent);
+            await createFile(octokit, GITHUB_USERNAME, repoName, 'LICENSE', 'feat: Add MIT License', licenseContent);
+            
+            // We need a commit SHA to send back. Let's get it from the last operation.
+            const { data: mainBranch } = await octokit.repos.getBranch({ owner: GITHUB_USERNAME, repo: repoName, branch: 'main' });
+            const commitSha = mainBranch.commit.sha;
+
+            // 4. Enable GitHub Pages
+            await octokit.repos.createPagesSite({ owner: GITHUB_USERNAME, repo: repoName, source: { branch: 'main', path: '/' } });
+            const pagesUrl = `https://${GITHUB_USERNAME}.github.io/${repoName}/`;
+            
+            // 5. Notify Evaluation URL
+            setTimeout(async () => {
+                await fetch(evaluation_url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, task, round, nonce, repo_url: repoUrl, commit_sha: commitSha, pages_url: pagesUrl }),
+                });
+                console.log(`Round 1 notification sent for ${task}`);
+            }, 20000);
+        
+        // =================================================================
+        //  ROUND 2 LOGIC: UPDATE EXISTING REPOSITORY
+        // =================================================================
+        } else if (round === 2) {
+            console.log(`Starting Round 2 for task: ${task}`);
+
+            // 1. Get the existing code from the repo
+            const { data: oldFile } = await octokit.repos.getContent({ owner: GITHUB_USERNAME, repo: repoName, path: 'index.html' });
+            const oldHtmlContent = Buffer.from(oldFile.content, 'base64').toString('utf8');
+            const oldFileSha = oldFile.sha;
+            
+            // 2. Generate updated code with LLM
+            const revisePrompt = `You are an expert web developer. You will be given an existing HTML file and a new brief to modify it. Respond with ONLY the complete, raw, updated HTML code. Do not include explanations.\n\n**New Brief:** ${brief}\n\n**Existing HTML Code:**\n\`\`\`html\n${oldHtmlContent}\n\`\`\``;
+            const result = await model.generateContent(revisePrompt);
+            const newHtmlContent = result.response.text();
+
+            // 3. Update index.html
+            const newCommitSha = await updateFile(octokit, GITHUB_USERNAME, repoName, 'index.html', 'feat: Update code for round 2', newHtmlContent, oldFileSha);
+            
+            // 4. Update README.md
+            const { data: oldReadme } = await octokit.repos.getContent({ owner: GITHUB_USERNAME, repo: repoName, path: 'README.md' });
+            const updatedReadmeContent = `${Buffer.from(oldReadme.content, 'base64').toString('utf8')}\n\n## Round 2\n\n**Brief:** ${brief}`;
+            await updateFile(octokit, GITHUB_USERNAME, repoName, 'README.md', 'docs: Update README for round 2', updatedReadmeContent, oldReadme.sha);
+
+            // 5. Notify Evaluation URL
+            const repoUrl = `https://github.com/${GITHUB_USERNAME}/${repoName}`;
+            const pagesUrl = `https://${GITHUB_USERNAME}.github.io/${repoName}/`;
+            
+            setTimeout(async () => {
+                await fetch(evaluation_url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, task, round, nonce, repo_url: repoUrl, commit_sha: newCommitSha, pages_url: pagesUrl }),
+                });
+                 console.log(`Round 2 notification sent for ${task}`);
+            }, 20000);
+        }
 
     } catch (error) {
-        console.error("An error occurred during AI generation or GitHub operations:", error);
+        console.error("An error occurred during the main process:", error);
     }
 };
