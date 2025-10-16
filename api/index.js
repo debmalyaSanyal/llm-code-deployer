@@ -48,8 +48,8 @@ module.exports = async (req, res) => {
     // 4. --- Use GitHub API to Create Repo and Push Files ---
     try {
         // IMPORTANT: Use your GitHub username and Personal Access Token
-        const GITHUB_USERNAME = "your-github-username"; 
-        const GITHUB_TOKEN = "your_personal_access_token_here";
+        const GITHUB_USERNAME = "debmalyaSanyal"; 
+        const GITHUB_TOKEN = "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";
         
         const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
