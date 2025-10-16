@@ -111,6 +111,24 @@
             padding-right: 60px; /* Space for the button */
         }
         
+        /* --- NEW: Style for the View Source Button --- */
+        .button {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 8px;
+            margin-top: 10px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+        }
+
         /* --- Tech Stack --- */
         .tech-stack {
             margin-top: 40px;
@@ -163,6 +181,10 @@
             <code id="code-snippet">curl -X POST <span id="api-url"></span>/api \<br>  -H "Content-Type: application/json" \<br>  -d '{ "secret": "...", "brief": "..." }'</code>
         </div>
         
+        <a href="https://github.com/debmalyaSanyal/llm-code-deployer" class="button" target="_blank" rel="noopener noreferrer">
+            View Source on GitHub
+        </a>
+        
         <div class="tech-stack">
             <h3>Powered By</h3>
             <div class="logos">
@@ -185,7 +207,6 @@
 
             // Copy to Clipboard logic
             copyButton.addEventListener('click', () => {
-                // Get the text content, replacing <br> with newlines for the clipboard
                 const textToCopy = codeSnippet.innerHTML.replace(/<br\s*\/?>/gi, '\n').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<span[^>]*>|<\/span>/g, '');
                 navigator.clipboard.writeText(textToCopy).then(() => {
                     copyButton.textContent = 'Copied!';
