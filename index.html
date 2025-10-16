@@ -32,99 +32,106 @@
         .container {
             background-color: var(--card-color);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 40px;
-            max-width: 650px;
+            max-width: 700px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
 
         h1 {
             font-size: 2.8rem;
-            background: linear-gradient(90deg, #4dabf7, #9775fa, #f783ac);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             margin-bottom: 20px;
-            animation: text-glow 5s ease-in-out infinite alternate;
         }
-
-        @keyframes text-glow {
-            from { text-shadow: 0 0 5px #4dabf788; }
-            to { text-shadow: 0 0 15px #f783ac88; }
-        }
-
-        .status-badge {
-            display: inline-flex;
+        
+        /* --- Workflow Diagram --- */
+        .workflow {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
+            margin: 40px 0;
+        }
+        .step {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease-out forwards;
+            flex-basis: 30%;
+        }
+        .step-icon { font-size: 2.5rem; }
+        .step p { font-size: 0.9rem; margin-top: 10px; font-weight: 500; }
+        .arrow {
+            font-size: 2rem;
+            color: var(--border-color);
+            opacity: 0;
+            animation: fadeInUp 0.5s ease-out 0.6s forwards;
         }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 10px;
+        /* Animation Delays */
+        .step:nth-child(1) { animation-delay: 0.2s; }
+        .step:nth-child(3) { animation-delay: 0.4s; }
+        .step:nth-child(5) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
-        /* Status Styles */
-        .status-checking { background-color: #f8f9fa22; color: #f8f9fa; border: 1px solid #f8f9fa88; }
-        .status-checking .status-dot { background-color: #f8f9fa; }
 
-        .status-ok { background-color: rgba(25, 135, 84, 0.2); color: var(--green-color); border: 1px solid var(--green-color); }
-        .status-ok .status-dot { background-color: var(--green-color); animation: pulse 1.5s infinite; }
-
-        .status-error { background-color: rgba(220, 53, 69, 0.2); color: var(--red-color); border: 1px solid var(--red-color); }
-        .status-error .status-dot { background-color: var(--red-color); }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
-        }
-        
-        p { font-size: 1.1rem; line-height: 1.6; margin: 0 0 30px 0; }
-
+        /* --- Usage Box with Copy Button --- */
         .usage-box {
+            position: relative;
             background-color: var(--bg-color);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 20px;
             text-align: left;
-            margin-bottom: 30px;
+            margin: 30px 0;
         }
-
-        .usage-box h3 { margin-top: 0; }
-        
-        .usage-box code {
+        #copy-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: #333;
+            border: 1px solid #555;
+            color: #ccc;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #copy-button:hover { background-color: #444; }
+        #copy-button.copied { background-color: var(--green-color); color: white; }
+        code {
             display: block;
-            background-color: #000;
-            padding: 15px;
-            border-radius: 6px;
             font-family: "SF Mono", "Fira Code", monospace;
             white-space: pre-wrap;
-            word-wrap: break-word;
             color: #c9d1d9;
+            padding-right: 60px; /* Space for the button */
         }
-
-        .button {
-            display: inline-block;
-            background: var(--primary-color);
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            font-weight: 600;
-            border-radius: 8px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        
+        /* --- Tech Stack --- */
+        .tech-stack {
+            margin-top: 40px;
+            opacity: 0.7;
         }
-
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+        .tech-stack h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+        .logos { display: flex; justify-content: center; gap: 30px; align-items: center; }
+        .logos svg {
+            height: 24px;
+            fill: #777;
+            transition: fill 0.3s, transform 0.3s;
+        }
+        .logos svg:hover {
+            fill: #fff;
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -132,52 +139,63 @@
 
     <div class="container">
         <h1>🤖 LLM Code Deployer</h1>
-        
-        <div id="api-status-badge" class="status-badge status-checking">
-            <span class="status-dot"></span>
-            <span id="api-status-text">Checking Status...</span>
+        <p>An automated system that uses AI to generate, build, and deploy web applications on demand.</p>
+
+        <div class="workflow">
+            <div class="step">
+                <div class="step-icon">📥</div>
+                <p>Receive Request</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step">
+                <div class="step-icon">🧠</div>
+                <p>Generate Code</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="step">
+                <div class="step-icon">🚀</div>
+                <p>Deploy to Cloud</p>
+            </div>
         </div>
-        
-        <p>This is a fully automated system that uses an AI to generate and deploy web applications on demand.</p>
 
         <div class="usage-box">
-            <h3>API Usage Example</h3>
-            <code>curl -X POST <span id="api-url"></span>/api \<br>  -H "Content-Type: application/json" \<br>  -d '{ "secret": "YOUR_SECRET", "brief": "Create a page with a blue button", ... }'</code>
+            <button id="copy-button">Copy</button>
+            <code id="code-snippet">curl -X POST <span id="api-url"></span>/api \<br>  -H "Content-Type: application/json" \<br>  -d '{ "secret": "...", "brief": "..." }'</code>
         </div>
         
-        <a href="https://github.com/your-github-username/llm-code-deployer" class="button" target="_blank" rel="noopener noreferrer">
-            View Source on GitHub
-        </a>
+        <div class="tech-stack">
+            <h3>Powered By</h3>
+            <div class="logos">
+                <svg viewBox="0 0 116 100"><path fill-rule="evenodd" clip-rule="evenodd" d="M57.5 0L115 100H0L57.5 0z"/></svg>
+                <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 14.25c-1.24 0-2.25-1.01-2.25-2.25S10.76 9.75 12 9.75s2.25 1.01 2.25 2.25-1.01 2.25-2.25 2.25zm0 1.5c1.93 0 3.5-1.57 3.5-3.5s-1.57-3.5-3.5-3.5-3.5 1.57-3.5 3.5 1.57 3.5 3.5 3.5zM4 12c0-1.66 1.34-3 3-3 .83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5c.83 0 1.5-.67 1.5-1.5 0-1.66 1.34-3 3-3s3 1.34 3 3c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-1.34-3-3-3-3 1.34-3 3v.38c-.3-.23-.65-.38-1-.38-1.1 0-2 .9-2 2s.9 2 2 2c.35 0 .68-.1 1-.26V15c0 1.66-1.34 3-3 3s-3-1.34-3-3c0-.83-.67-1.5-1.5-1.5S4 12.83 4 12zm16 0c0-1.66-1.34-3-3-3-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5c-.83 0-1.5-.67-1.5-1.5 0-1.66-1.34-3-3-3s-3 1.34-3 3c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5 1.34-3 3-3 3 1.34 3 3v-.38c.3.23.65.38 1 .38 1.1 0 2-.9 2-2s-.9-2-2-2c-.35 0-.68.1-1 .26V9c0-1.66 1.34-3 3-3s3 1.34 3 3c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-1.34-3-3-3-3 1.34-3-3z"></path></svg>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // This script runs when the page loads to check the API status
         document.addEventListener('DOMContentLoaded', () => {
-            const statusBadge = document.getElementById('api-status-badge');
-            const statusText = document.getElementById('api-status-text');
+            const copyButton = document.getElementById('copy-button');
+            const codeSnippet = document.getElementById('code-snippet');
             const apiUrlSpan = document.getElementById('api-url');
-
-            // Display the API's base URL in the usage example
+            
+            // Populate the API URL dynamically
             apiUrlSpan.textContent = window.location.origin;
 
-            // Ping the /api endpoint
-            fetch('/api')
-                .then(response => {
-                    // A 405 error is expected and correct for a GET request.
-                    // It means the server is online and responding.
-                    if (response.status === 405) {
-                        statusBadge.className = 'status-badge status-ok';
-                        statusText.textContent = 'API Operational';
-                    } else {
-                        throw new Error('Server responded with an unexpected status.');
-                    }
-                })
-                .catch(error => {
-                    // This catches network errors (e.g., server is down)
-                    console.error('API Status Check Failed:', error);
-                    statusBadge.className = 'status-badge status-error';
-                    statusText.textContent = 'API Error';
+            // Copy to Clipboard logic
+            copyButton.addEventListener('click', () => {
+                // Get the text content, replacing <br> with newlines for the clipboard
+                const textToCopy = codeSnippet.innerHTML.replace(/<br\s*\/?>/gi, '\n').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<span[^>]*>|<\/span>/g, '');
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copyButton.textContent = 'Copied!';
+                    copyButton.classList.add('copied');
+                    setTimeout(() => {
+                        copyButton.textContent = 'Copy';
+                        copyButton.classList.remove('copied');
+                    }, 2000);
                 });
+            });
         });
     </script>
 </body>
